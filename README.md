@@ -118,3 +118,28 @@ Remove the environment variable and apply the manifest again to recover.
 Plural manages the manifests in `k8s/` from the `main` branch of this repository. The service is deployed to the `local` cluster in the `demo-api` namespace.
 
 After Plural takes ownership, make deployment changes through Git instead of running `kubectl apply`. Commit and push a manifest change, then watch the service sync and roll out in the Plural Console.
+
+## Public endpoint
+
+Plural also deploys a Cloudflare Quick Tunnel from `k8s/tunnel.yaml`. The tunnel connects to the internal `demo-api` Service and creates a temporary public HTTPS URL.
+
+After Plural finishes syncing, find the URL in the tunnel logs:
+
+```sh
+kubectl -n demo-api logs deployment/demo-api-tunnel
+```
+
+The same logs are available from the `demo-api-tunnel` component in the Plural Console. Look for a URL ending in `trycloudflare.com`.
+
+Test the public endpoint:
+
+```sh
+PUBLIC_URL=https://example.trycloudflare.com
+curl --fail "$PUBLIC_URL/"
+curl --fail "$PUBLIC_URL/healthz"
+curl --fail "$PUBLIC_URL/version"
+```
+
+Quick Tunnels are intended for testing. The hostname changes whenever the tunnel pod restarts, and availability depends on the local Mac, OrbStack, and the tunnel process remaining online.
+
+For a stable hostname, replace the Quick Tunnel with a named Cloudflare Tunnel and store its token in a Kubernetes Secret. Do not commit the token to this repository.
